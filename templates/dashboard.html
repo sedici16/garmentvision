@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>GarmentScan Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; padding: 2rem; }
+        h1 { font-size: 2rem; margin-bottom: 1.5rem; }
+        .stats { display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; }
+        .stat-card { background: #1e293b; border-radius: 12px; padding: 1.5rem; flex: 1; min-width: 150px; }
+        .stat-card .value { font-size: 2rem; font-weight: bold; color: #38bdf8; }
+        .stat-card .label { color: #94a3b8; font-size: 0.9rem; }
+        table { width: 100%; border-collapse: collapse; background: #1e293b; border-radius: 12px; overflow: hidden; }
+        th, td { padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid #334155; }
+        th { background: #334155; color: #94a3b8; font-size: 0.85rem; text-transform: uppercase; }
+        h2 { margin: 1.5rem 0 1rem; }
+        .co2 { color: #f87171; }
+        .water { color: #38bdf8; }
+    </style>
+</head>
+<body>
+    <h1>👕 GarmentScan Dashboard</h1>
+
+    <div class="stats">
+        <div class="stat-card">
+            <div class="value">{{ stats.total_users }}</div>
+            <div class="label">Users</div>
+        </div>
+        <div class="stat-card">
+            <div class="value">{{ stats.total_scans }}</div>
+            <div class="label">Total Scans</div>
+        </div>
+        <div class="stat-card">
+            <div class="value">{{ stats.scans_today }}</div>
+            <div class="label">Today</div>
+        </div>
+        <div class="stat-card">
+            <div class="value co2">{{ stats.total_co2_kg }} kg</div>
+            <div class="label">Total CO2 Tracked</div>
+        </div>
+    </div>
+
+    {% if top_materials %}
+    <h2>Top Materials Scanned</h2>
+    <table>
+        <tr><th>Material</th><th>Scans</th><th>Avg CO2 (kg)</th></tr>
+        {% for m in top_materials %}
+        <tr><td>{{ m.primary_material }}</td><td>{{ m.count }}</td><td class="co2">{{ m.avg_co2 }}</td></tr>
+        {% endfor %}
+    </table>
+    {% endif %}
+
+    <h2>Recent Scans</h2>
+    <table>
+        <tr>
+            <th>User</th>
+            <th>Garment</th>
+            <th>Material</th>
+            <th>CO2</th>
+            <th>Water</th>
+            <th>Time</th>
+        </tr>
+        {% for s in recent %}
+        <tr>
+            <td>{{ s.first_name or s.username or '?' }}</td>
+            <td>{{ s.garment_type }}</td>
+            <td>{{ s.primary_material }}</td>
+            <td class="co2">{% if s.co2_kg %}{{ s.co2_kg }} kg{% else %}-{% endif %}</td>
+            <td class="water">{% if s.water_liters %}{{ "{:,}".format(s.water_liters) }} L{% else %}-{% endif %}</td>
+            <td>{{ s.timestamp }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>

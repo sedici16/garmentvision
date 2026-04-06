@@ -1,0 +1,63 @@
+import logging
+import ssl
+import threading
+from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, CallbackQueryHandler, filters
+from telegram.request import HTTPXRequest
+
+from bot.config import TELEGRAM_BOT_TOKEN, validate
+from bot.handlers import start_handler, help_handler, photo_handler, document_handler, callback_handler
+from bot.db import init_db
+from bot.dashboard import create_app
+
+
+def main():
+    validate()
+    init_db()
+
+    logging.basicConfig(
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        level=logging.INFO,
+    )
+
+    ssl_context = ssl.create_default_context()
+    ssl_context.check_hostname = True
+    ssl_context.verify_mode = ssl.CERT_REQUIRED
+    ssl_context.options |= 0x4
+
+    request = HTTPXRequest(
+        connection_pool_size=8,
+        connect_timeout=20.0,
+        read_timeout=40.0,
+        write_timeout=40.0,
+        pool_timeout=10.0,
+        httpx_kwargs={"verify": ssl_context},
+    )
+
+    app = (
+        ApplicationBuilder()
+        .token(TELEGRAM_BOT_TOKEN)
+        .request(request)
+        .get_updates_request(HTTPXRequest(httpx_kwargs={"verify": ssl_context}))
+        .build()
+    )
+
+    app.add_handler(CommandHandler("start", start_handler))
+    app.add_handler(CommandHandler("help", help_handler))
+    app.add_handler(MessageHandler(filters.PHOTO, photo_handler))
+    app.add_handler(MessageHandler(filters.Document.IMAGE, document_handler))
+    app.add_handler(CallbackQueryHandler(callback_handler))
+
+    # Dashboard
+    dashboard = create_app()
+    threading.Thread(
+        target=lambda: dashboard.run(host="0.0.0.0", port=5002, debug=False, use_reloader=False),
+        daemon=True,
+    ).start()
+    logging.info("Dashboard running at http://localhost:5002")
+
+    logging.info("GarmentScan bot starting...")
+    app.run_polling()
+
+
+if __name__ == "__main__":
+    main()
